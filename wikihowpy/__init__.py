@@ -174,8 +174,32 @@ class Article:
         }
 
 
-def random_article():
-    return Article()
+class WikiHow:
+    lang2url = {
+        'en': 'http://www.wikihow.com/',
+        'es': 'http://es.wikihow.com/',
+        'pt': 'http://pt.wikihow.com/',
+        'it': 'http://www.wikihow.it/',
+        'fr': 'http://fr.wikihow.com/',
+        'ru': 'http://ru.wikihow.com/',
+        'de': 'http://de.wikihow.com/',
+        'zh': 'http://zh.wikihow.com/',
+        'nl': 'http://nl.wikihow.com/',
+        'cz': 'http://www.wikihow.cz/',
+        'id': 'http://id.wikihow.com/',
+        'jp': 'http://www.wikihow.jp/',
+        'hi': 'http://hi.wikihow.com/',
+        'th': 'http://th.wikihow.com/',
+        'ar': 'http://ar.wikihow.com/',
+        'ko': 'http://ko.wikihow.com/',
+        'tr': 'http://www.wikihow.com.tr/',
+        'vn': 'http://www.wikihow.vn/',
+    }
+
+
+def random_article(lang='en'):
+    url = WikiHow.lang2url[lang] + 'Special:Randomizer'
+    return Article(url)
 
 
 if __name__ == '__main__':
