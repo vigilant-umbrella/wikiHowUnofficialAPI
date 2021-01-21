@@ -196,10 +196,40 @@ class WikiHow:
         'vn': 'http://www.wikihow.vn/',
     }
 
+    @staticmethod
+    def search(search_term, max_results=-1, lang='en'):
+        lang = lang.split('-')[0].lower()
+        if lang not in WikiHow.lang2url:
+            raise UnsupportedLanguage
+        search_url = WikiHow.lang2url[lang] + \
+            'wikiHowTo?search=' + search_term.replace(' ', '+')
+        content = urllib.request.urlopen(search_url)
+        read_content = content.read()
+        soup = BeautifulSoup(read_content, 'html.parser').findAll('a', attrs={
+            'class': 'result_link'})
+        count = 1
+        for link in soup:
+            url = link.get('href')
+            if not url.startswith('http'):
+                url = 'http://' + url
+            how_to = Article(url)
+            try:
+                how_to._parse()
+            except ParseError:
+                continue
+            yield how_to
+            count += 1
+            if 0 < max_results < count:
+                return
+
 
 def random_article(lang='en'):
     url = WikiHow.lang2url[lang] + 'Special:Randomizer'
     return Article(url)
+
+
+def search_wikihow(query, max_results=10, lang='en'):
+    return list(WikiHow.search(query, max_results, lang))
 
 
 if __name__ == '__main__':
