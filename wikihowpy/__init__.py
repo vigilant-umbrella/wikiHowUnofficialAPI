@@ -11,6 +11,7 @@ __credits__ = 'Aniket Sharma & Ashok Arora'
 from bs4 import BeautifulSoup
 import urllib.request
 from pywikihow.exceptions import *
+from datetime import datetime
 
 
 class Steps:
@@ -46,6 +47,12 @@ class Article:
         self._title = None
         self._intro = None
         self._steps = []
+        self._num_votes = None
+        self._percent_helpful = None
+        self._is_expert = None
+        self._last_updated = None
+        self._views = None
+
         self._parsed = False
         if not lazy:
             self._parse()
@@ -87,6 +94,36 @@ class Article:
     @property
     def n_steps(self):
         return len(self._steps)
+
+    @property
+    def num_votes(self):
+        if not self._parsed:
+            self._parse()
+        return self._num_votes
+
+    @property
+    def percent_helpful(self):
+        if not self._parsed:
+            self._parse()
+        return self._percent_helpful
+
+    @property
+    def is_expert(self):
+        if not self._parsed:
+            self._parse()
+        return self._is_expert
+
+    @property
+    def last_updated(self):
+        if not self._parsed:
+            self._parse()
+        return self._last_updated
+
+    @property
+    def views(self):
+        if not self._parsed:
+            self._parse()
+        return self._views
 
     def _parse_title(self, soup):
         html = soup.findAll(
@@ -150,6 +187,47 @@ class Article:
             self._steps[count]._picture = pic
             count += 1
 
+    def _parse_votes_n_helpful(self, soup):
+        num_votes_html = soup.find('div', {'class': 'sp_helpful_rating_count'})
+        if num_votes_html:
+            if str(num_votes_html) == '<div class="sp_helpful_rating_count"></div>':
+                return
+            content = str(num_votes_html)
+            self._num_votes = int(content[content.find(
+                '>')+1:content.find(' votes')])
+            self._percent_helpful = int(content[content.find(
+                '- ')+2:content.find('%</div>')])
+
+    def _parse_is_expert(self, soup):
+        expert_html = soup.find('div', {'id': 'byline_info'})
+        if not expert_html:
+            raise ParseError
+        else:
+            b = expert_html.find('b')
+            if b:
+                self._is_expert = True
+            else:
+                self._is_expert = False
+
+    def _parse_last_updated(self, soup):
+        update_html = soup.find('div', {'id': 'byline_info'})
+        if not update_html:
+            raise ParseError
+        else:
+            span = str(update_html.find('span'))
+            date = span[span.find(': ')+2:span.find('</span>')]
+            self._last_updated = datetime.strptime(date, '%B %d, %Y')
+
+    def _parse_views(self, soup):
+        views_html = soup.find('div', {'class': 'sp_box sp_stats_box'})
+        if not views_html:
+            raise ParseError
+        else:
+            div = views_html.findAll('div', {'class': 'sp_text'})
+            span = str(div[2].find('span', {'class': 'sp_text_data'}))
+            self._views = int(''.join(
+                (span[span.find('>')+1: span.find('</span>')]).split(',')))
+
     def _parse(self):
         try:
             content = urllib.request.urlopen(self._url)
@@ -159,6 +237,10 @@ class Article:
             self._parse_intro(soup)
             self._parse_steps(soup)
             self._parse_pictures(soup)
+            self._parse_votes_n_helpful(soup)
+            self._parse_is_expert(soup)
+            self._parse_last_updated(soup)
+            self._parse_views(soup)
             self._parsed = True
         except Exception as e:
             raise ParseError
@@ -170,7 +252,12 @@ class Article:
             'intro': self._intro,
             'n_steps': self.n_steps,
             'steps': self.steps,
-            'summary': self.summary
+            'summary': self.summary,
+            'num_votes': self.num_votes,
+            'percent_helpful': self.percent_helpful,
+            'is_expert': self.is_expert,
+            'last_updated': self.last_updated,
+            'views': self.views
         }
 
 
