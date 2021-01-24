@@ -10,7 +10,7 @@ __credits__ = 'Aniket Sharma & Ashok Arora'
 
 from bs4 import BeautifulSoup
 import urllib.request
-from pywikihow.exceptions import *
+from wikihowpy.exceptions import *
 from datetime import datetime
 
 
