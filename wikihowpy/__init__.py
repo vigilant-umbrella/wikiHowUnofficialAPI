@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 import urllib.request
 from wikihowpy.exceptions import *
 from datetime import datetime
+import re
 
 
 class Steps:
@@ -156,19 +157,23 @@ class Article:
         step_html = soup.findAll('div', {'class': 'step'})
         count = 0
         for html in step_html:
-            super = html.find('sup')
-            script = html.find('script')
-            if script != None:
-                for script in html.findAll('script'):
-                    script.decompose()
-            if super != None:
-                for sup in html.findAll('sup'):
-                    sup.decompose()
-            count += 1
-            summary = html.find('b').text
+            # exception handling because not all steps have a summary
+            try:
+                super = html.find('sup')
+                script = html.find('script')
+                if script != None:
+                    for script in html.findAll('script'):
+                        script.decompose()
+                if super != None:
+                    for sup in html.findAll('sup'):
+                        sup.decompose()
+                count += 1
+                summary = html.find('b').text
 
-            for _extra_div in html.find('b').find_all('div'):
-                summary = summary.replace(_extra_div.text, '')
+                for _extra_div in html.find('b').find_all('div'):
+                    summary = summary.replace(_extra_div.text, '')
+            except:
+                summary = ''
 
             step = Steps(count, summary)
             ex_step = html
@@ -179,13 +184,17 @@ class Article:
 
     def _parse_pictures(self, soup):
         count = 0
-        for html in soup.findAll('a', {'class': 'image'}):
-            html = html.find('img')
-            i = str(html).find('data-src=')
-            pic = str(html)[i:].replace('data-src="', '')
-            pic = pic[:pic.find('"')]
-            self._steps[count]._picture = pic
-            count += 1
+        for list_html in soup.findAll('ol'):
+            for list in list_html.findAll('li', {'id': re.compile('step.+')}):
+                html = list.find('a', {'class': 'image'})
+                # handling case when there are no images or for when there are videos/gifs instead of images
+                if html != None:
+                    html = html.find('img')
+                    i = str(html).find('data-src=')
+                    pic = str(html)[i:].replace('data-src="', '')
+                    pic = pic[:pic.find('"')]
+                    self._steps[count]._picture = pic
+                count += 1
 
     def _parse_votes_n_helpful(self, soup):
         num_votes_html = soup.find('div', {'class': 'sp_helpful_rating_count'})
@@ -193,8 +202,8 @@ class Article:
             if str(num_votes_html) == '<div class="sp_helpful_rating_count"></div>':
                 return
             content = str(num_votes_html)
-            self._num_votes = int(content[content.find(
-                '>')+1:content.find(' votes')])
+            self._num_votes = int(''.join(
+                (content[content.find('>')+1: content.find(' votes')]).split(',')))
             self._percent_helpful = int(content[content.find(
                 '- ')+2:content.find('%</div>')])
 
@@ -283,7 +292,7 @@ class WikiHow:
         'vn': 'http://www.wikihow.vn/',
     }
 
-    @staticmethod
+    @ staticmethod
     def search(search_term, max_results=-1, lang='en'):
         lang = lang.split('-')[0].lower()
         if lang not in WikiHow.lang2url:
