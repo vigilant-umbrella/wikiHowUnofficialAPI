@@ -247,9 +247,9 @@ class Article:
 
     def get(self):
         return {
-            'url': self._url,
+            'url': self.url,
             'title': self.title,
-            'intro': self._intro,
+            'intro': self.intro,
             'n_steps': self.n_steps,
             'steps': self.steps,
             'summary': self.summary,
