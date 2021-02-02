@@ -1,10 +1,10 @@
-from wikihowpy import *
+import wikihowunofficialapi as wha
 
 # Some edge cases -
 # Expert article with no votes: https://www.wikihow.com/Photograph-the-Sun
 # Article with gifs in place of images: https://www.wikihow.com/Clean-a-Solder-Iron
 
-article = Article('https://www.wikihow.com/Train-a-Dog')
+article = wha.Article('https://www.wikihow.com/Train-a-Dog')
 
 
 print(article.url)

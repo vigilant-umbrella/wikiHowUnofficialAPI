@@ -1,4 +1,4 @@
-from wikihowpy import *
+import wikihowunofficialapi as wha
 
-ra = random_article()
+ra = wha.random_article()
 print(ra)

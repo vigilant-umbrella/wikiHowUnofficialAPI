@@ -1,16 +1,16 @@
 """
-wikihowpy
+wikiHowUnofficialAPI
 
 API to extract data from wikiHow.
 """
 
 __version__ = '0.1.0'
-__author__ = 'mlcpp'
+__author__ = 'Aniket Sharma, Ashok Arora'
 __credits__ = 'Aniket Sharma & Ashok Arora'
 
 from bs4 import BeautifulSoup
 import urllib.request
-from wikihowpy.exceptions import *
+from wikihowunofficialapi.exceptions import *
 from datetime import datetime
 import re
 
@@ -219,6 +219,7 @@ class Article:
                             pic = pic[:pic.find('"')]
                             pictures_list[pic_count] = pic
                         pic_count += 1
+
                 count_steps = 0
                 for html in step_html:
                     # exception handling because not all steps have a summary

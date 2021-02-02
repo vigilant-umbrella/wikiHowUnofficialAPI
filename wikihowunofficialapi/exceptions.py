@@ -1,5 +1,5 @@
 class ParseError(RuntimeError):
-    """ Error parsing WikiHow page"""
+    """ Error parsing wikiHow page"""
 
 
 class UnsupportedLanguage(ValueError):
