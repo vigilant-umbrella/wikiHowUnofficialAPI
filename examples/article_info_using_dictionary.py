@@ -1,6 +1,6 @@
-from wikihowpy import *
+import wikihowunofficialapi as wha
 
-article = Article('https://www.wikihow.com/Train-a-Dog')
+article = wha.Article('https://www.wikihow.com/Train-a-Dog')
 info = article.get()
 
 
