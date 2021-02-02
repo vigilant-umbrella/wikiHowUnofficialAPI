@@ -16,22 +16,22 @@ import re
 
 
 class Steps:
-    def __init__(self, number, summary=None, description=None, picture=None):
+    def __init__(self, number, title=None, description=None, picture=None):
         self._number = number
-        self._summary = summary
+        self._title = title
         self._description = description
         self._picture = picture
 
-    def __repr__(self, view_description=False):
-        return '{} - {}'.format(self.number, self.summary)
+    def __repr__(self):
+        return '{} - {}'.format(self.number, self.title)
 
     @property
     def number(self):
         return self._number
 
     @property
-    def summary(self):
-        return self._summary
+    def title(self):
+        return self._title
 
     @property
     def description(self):
@@ -41,20 +41,58 @@ class Steps:
     def picture(self):
         return self._picture
 
+    def get(self):
+        return {
+            'number': self.number,
+            'title': self.title,
+            'description': self.description,
+            'picture': self.picture
+        }
+
+
+class Methods:
+    def __init__(self, number, title):
+        self._number = number
+        self._title = title
+        self._steps = []
+
+    def __repr__(self):
+        return '{} - {}'.format(self.number, self.title)
+
+    @property
+    def number(self):
+        return self._number
+
+    @property
+    def title(self):
+        return self._title
+
+    @property
+    def steps(self):
+        return self._steps
+
+    def get(self):
+        return {
+            'number': self.number,
+            'title': self.title,
+            'steps': self.steps
+        }
+
 
 class Article:
     def __init__(self, url='https://www.wikihow.com/Special:Randomizer', lazy=True):
         self._url = url
         self._title = None
         self._intro = None
-        self._steps = []
+        self._summary = None
+        self._methods = []
         self._num_votes = None
         self._percent_helpful = None
         self._is_expert = None
         self._last_updated = None
         self._views = None
-
         self._parsed = False
+
         if not lazy:
             self._parse()
 
@@ -80,21 +118,20 @@ class Article:
         return self._intro
 
     @property
-    def steps(self):
+    def summary(self):
         if not self._parsed:
             self._parse()
-        return self._steps
+        return self._summary
 
     @property
-    def summary(self):
-        summary = self.title + '\n'
-        for step in self.steps:
-            summary += '{n} - '.format(n=step.number) + step.summary + '\n'
-        return summary
+    def methods(self):
+        if not self._parsed:
+            self._parse()
+        return self._methods
 
     @property
-    def n_steps(self):
-        return len(self._steps)
+    def n_methods(self):
+        return len(self._methods)
 
     @property
     def num_votes(self):
@@ -152,49 +189,63 @@ class Article:
                 intro = intro_html.text
                 self._intro = intro.strip()
 
-    def _parse_steps(self, soup):
-        self._steps = []
-        step_html = soup.findAll('div', {'class': 'step'})
-        count = 0
-        for html in step_html:
-            # exception handling because not all steps have a summary
-            try:
-                super = html.find('sup')
-                script = html.find('script')
-                if script != None:
-                    for script in html.findAll('script'):
-                        script.decompose()
-                if super != None:
-                    for sup in html.findAll('sup'):
-                        sup.decompose()
+    def _parse_methods(self, soup):
+        self._methods = []
+        methods_html = soup.findAll(
+            'div', {'class': ['section steps steps_first sticky', 'section steps sticky']})
+        if not methods_html:
+            raise ParseError
+        else:
+            count = 0
+            for method_html in methods_html:
+                span = method_html.find('span', {'class': 'mw-headline'})
                 count += 1
-                summary = html.find('b').text
+                title = span.text
+                method = Methods(count, title)
+                self._methods.append(method)
 
-                for _extra_div in html.find('b').find_all('div'):
-                    summary = summary.replace(_extra_div.text, '')
-            except:
-                summary = ''
+                step_html = method_html.findAll('div', {'class': 'step'})
 
-            step = Steps(count, summary)
-            ex_step = html
-            for b in ex_step.findAll('b'):
-                b.decompose()
-            step._description = ex_step.text.strip()
-            self._steps.append(step)
+                pic_count = 0
+                pictures_list = [None] * len(step_html)
+                for list_html in method_html.findAll('ol'):
+                    for list in list_html.findAll('li', {'id': re.compile('step.+')}):
+                        html = list.find('a', {'class': 'image'})
+                        # handling case when there are no images or for when there are videos/gifs instead of images
+                        if html != None:
+                            html = html.find('img')
+                            i = str(html).find('data-src=')
+                            pic = str(html)[i:].replace('data-src="', '')
+                            pic = pic[:pic.find('"')]
+                            pictures_list[pic_count] = pic
+                        pic_count += 1
+                count_steps = 0
+                for html in step_html:
+                    # exception handling because not all steps have a summary
+                    try:
+                        super = html.find('sup')
+                        script = html.find('script')
+                        if script != None:
+                            for script in html.findAll('script'):
+                                script.decompose()
+                        if super != None:
+                            for sup in html.findAll('sup'):
+                                sup.decompose()
+                        count_steps += 1
+                        summary = html.find('b').text
 
-    def _parse_pictures(self, soup):
-        count = 0
-        for list_html in soup.findAll('ol'):
-            for list in list_html.findAll('li', {'id': re.compile('step.+')}):
-                html = list.find('a', {'class': 'image'})
-                # handling case when there are no images or for when there are videos/gifs instead of images
-                if html != None:
-                    html = html.find('img')
-                    i = str(html).find('data-src=')
-                    pic = str(html)[i:].replace('data-src="', '')
-                    pic = pic[:pic.find('"')]
-                    self._steps[count]._picture = pic
-                count += 1
+                        for _extra_div in html.find('b').find_all('div'):
+                            summary = summary.replace(_extra_div.text, '')
+                    except:
+                        summary = ''
+
+                    step = Steps(count_steps, summary)
+                    ex_step = html
+                    for b in ex_step.findAll('b'):
+                        b.decompose()
+                    step._description = ex_step.text.strip()
+                    step._picture = pictures_list[count_steps-1]
+                    self._methods[count-1]._steps.append(step)
 
     def _parse_votes_n_helpful(self, soup):
         num_votes_html = soup.find('div', {'class': 'sp_helpful_rating_count'})
@@ -244,8 +295,7 @@ class Article:
             soup = BeautifulSoup(read_content, 'html.parser')
             self._parse_title(soup)
             self._parse_intro(soup)
-            self._parse_steps(soup)
-            self._parse_pictures(soup)
+            self._parse_methods(soup)
             self._parse_votes_n_helpful(soup)
             self._parse_is_expert(soup)
             self._parse_last_updated(soup)
@@ -259,8 +309,8 @@ class Article:
             'url': self.url,
             'title': self.title,
             'intro': self.intro,
-            'n_steps': self.n_steps,
-            'steps': self.steps,
+            'n_methods': self.n_methods,
+            'methods': self.methods,
             'summary': self.summary,
             'num_votes': self.num_votes,
             'percent_helpful': self.percent_helpful,
