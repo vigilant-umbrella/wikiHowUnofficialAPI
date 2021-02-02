@@ -16,9 +16,9 @@ print(info['is_expert'])
 print(info['last_updated'])
 print(info['views'])
 
-first_method = info['methods'][0]
+first_method = article.methods[0]
 first_step = first_method.steps[0]
 print(first_step)
+print(first_step.title)
 print(first_step.description)
-print(first_step.summary)
 print(first_step.picture)
