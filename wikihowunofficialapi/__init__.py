@@ -84,15 +84,19 @@ class Article:
         self._url = url
         self._title = None
         self._intro = None
-        self._summary = None
         self._methods = []
         self._num_votes = None
         self._percent_helpful = None
         self._is_expert = None
         self._last_updated = None
         self._views = None
-        self._parsed = False
+        self._co_authors = None
+        self._references = None
+        self._summary = None
+        self._warnings = []
+        self._tips = []
 
+        self._parsed = False
         if not lazy:
             self._parse()
 
@@ -116,12 +120,6 @@ class Article:
         if not self._parsed:
             self._parse()
         return self._intro
-
-    @property
-    def summary(self):
-        if not self._parsed:
-            self._parse()
-        return self._summary
 
     @property
     def methods(self):
@@ -162,6 +160,36 @@ class Article:
         if not self._parsed:
             self._parse()
         return self._views
+
+    @property
+    def co_authors(self):
+        if not self._parsed:
+            self._parse()
+        return self._co_authors
+
+    @property
+    def references(self):
+        if not self._parsed:
+            self._parse()
+        return self._references
+
+    @property
+    def summary(self):
+        if not self._parsed:
+            self._parse()
+        return self._summary
+
+    @property
+    def warnings(self):
+        if not self._parsed:
+            self._parse()
+        return self._warnings
+
+    @property
+    def tips(self):
+        if not self._parsed:
+            self._parse()
+        return self._tips
 
     def _parse_title(self, soup):
         html = soup.findAll(
@@ -219,7 +247,6 @@ class Article:
                             pic = pic[:pic.find('"')]
                             pictures_list[pic_count] = pic
                         pic_count += 1
-
                 count_steps = 0
                 for html in step_html:
                     # exception handling because not all steps have a summary
@@ -289,6 +316,61 @@ class Article:
             self._views = int(''.join(
                 (span[span.find('>')+1: span.find('</span>')]).split(',')))
 
+    def _parse_co_authors(self, soup):
+        co_authors_html = soup.find('div', {'class': 'sp_box sp_stats_box'})
+        if not co_authors_html:
+            raise ParseError
+        else:
+            div = co_authors_html.findAll('div', {'class': 'sp_text'})
+            span = str(div[0].find('span', {'class': 'sp_text_data'}))
+            self._co_authors = int(''.join(
+                (span[span.find('>')+1: span.find('</span>')]).split(',')))
+
+    def _parse_references(self, soup):
+        references_html = soup.findAll('a', {'class': 'external free'})
+        count = 0
+        if not references_html:
+            return None
+        else:
+            for reference in references_html:
+                count += 1
+        self._references = count
+
+    def _parse_summary(self, soup):
+        summary_html_div = soup.find('div', {'id': 'summary_wrapper'})
+        if not summary_html_div:
+            return None
+        else:
+            summary_html = summary_html_div.find('p', {'id': 'summary_text'})
+            summary = summary_html.text[:-35]
+            self._summary = summary
+
+    def _parse_warnings(self, soup):
+        warnings_html_div = soup.find('div', {'id': 'warnings'})
+        if not warnings_html_div:
+            return None
+        else:
+            warnings_html = warnings_html_div.find('ul')
+            for li in warnings_html.findAll('li'):
+                if not li.find('div'):
+                    return None
+                self._warnings.append(li.find('div').text)
+
+    def _parse_tips(self, soup):
+        tips_html_div = soup.find('div', {'id': 'tips'})
+        if not tips_html_div:
+            return None
+        else:
+            tips_html = tips_html_div.find('ul')
+            if not tips_html:
+                return None
+            else:
+                for li in tips_html.findAll('li'):
+                    if not li.find('div'):
+                        return None
+                    else:
+                        self._tips.append(li.find('div').text)
+
     def _parse(self):
         try:
             content = urllib.request.urlopen(self._url)
@@ -301,6 +383,12 @@ class Article:
             self._parse_is_expert(soup)
             self._parse_last_updated(soup)
             self._parse_views(soup)
+            self._parse_co_authors(soup)
+            self._parse_references(soup)
+            self._parse_summary(soup)
+            self._parse_warnings(soup)
+            self._parse_tips(soup)
+
             self._parsed = True
         except Exception as e:
             raise ParseError
@@ -312,12 +400,16 @@ class Article:
             'intro': self.intro,
             'n_methods': self.n_methods,
             'methods': self.methods,
-            'summary': self.summary,
             'num_votes': self.num_votes,
             'percent_helpful': self.percent_helpful,
             'is_expert': self.is_expert,
             'last_updated': self.last_updated,
-            'views': self.views
+            'views': self.views,
+            'co_authors': self.co_authors,
+            'references': self.references,
+            'summary': self.summary,
+            'warnings': self.warnings,
+            'tips': self.tips
         }
 
 
