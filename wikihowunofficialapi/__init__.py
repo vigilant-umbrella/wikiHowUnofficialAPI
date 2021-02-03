@@ -84,7 +84,6 @@ class Article:
         self._url = url
         self._title = None
         self._intro = None
-        self._summary = None
         self._methods = []
         self._num_votes = None
         self._percent_helpful = None
@@ -121,12 +120,6 @@ class Article:
         if not self._parsed:
             self._parse()
         return self._intro
-
-    @property
-    def summary(self):
-        if not self._parsed:
-            self._parse()
-        return self._summary
 
     @property
     def methods(self):
@@ -344,11 +337,13 @@ class Article:
         self._references = count
 
     def _parse_summary(self, soup):
-        summary_html = soup.find('p', {'id': 'summary_text'})
-        if not summary_html:
+        summary_html_div = soup.find('div', {'id': 'summary_wrapper'})
+        if not summary_html_div:
             return None
         else:
-            self._summary = summary_html.text
+            summary_html = summary_html_div.find('p', {'id': 'summary_text'})
+            summary = summary_html.text[:-35]
+            self._summary = summary
 
     def _parse_warnings(self, soup):
         warnings_html_div = soup.find('div', {'id': 'warnings'})
@@ -405,7 +400,6 @@ class Article:
             'intro': self.intro,
             'n_methods': self.n_methods,
             'methods': self.methods,
-            'summary': self.summary,
             'num_votes': self.num_votes,
             'percent_helpful': self.percent_helpful,
             'is_expert': self.is_expert,

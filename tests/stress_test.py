@@ -15,7 +15,7 @@ try:
     print('Testing Passed')
 
 except exceptions.ParseError:
-    print('Testing Failed: ParseError @')
+    print('Testing Failed: ParseError')
     print('Report the error with the way to reproduce it at vigilant.umbrella@gmail.com')
 except exceptions.UnsupportedLanguage:
     print('Testing Failed: UnsupportedLanguage')
