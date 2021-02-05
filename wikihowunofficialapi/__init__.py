@@ -358,7 +358,10 @@ class Article:
                     self._warnings.append(li.find('div').text)
             else:
                 warnings_html = warnings_html_div.find('p')
-                self._warnings.append(warnings_html.text)
+                if warnings_html != None:
+                    self._warnings.append(warnings_html.text)
+                else:
+                    return None
 
     def _parse_tips(self, soup):
         tips_html_div = soup.find('div', {'id': 'tips'})
@@ -374,7 +377,10 @@ class Article:
                         self._tips.append(li.find('div').text)
             else:
                 tips_html = tips_html_div.find('p')
-                self._tips.append(tips_html.text)
+                if tips_html != None:
+                    self._tips.append(tips_html.text)
+                else:
+                    return None
 
     def _parse(self):
         try:
