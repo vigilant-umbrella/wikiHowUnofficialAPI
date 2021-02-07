@@ -351,10 +351,17 @@ class Article:
             return None
         else:
             warnings_html = warnings_html_div.find('ul')
-            for li in warnings_html.findAll('li'):
-                if not li.find('div'):
+            if warnings_html != None:
+                for li in warnings_html.findAll('li'):
+                    if not li.find('div'):
+                        return None
+                    self._warnings.append(li.find('div').text)
+            else:
+                warnings_html = warnings_html_div.find('p')
+                if warnings_html != None:
+                    self._warnings.append(warnings_html.text)
+                else:
                     return None
-                self._warnings.append(li.find('div').text)
 
     def _parse_tips(self, soup):
         tips_html_div = soup.find('div', {'id': 'tips'})
@@ -362,14 +369,18 @@ class Article:
             return None
         else:
             tips_html = tips_html_div.find('ul')
-            if not tips_html:
-                return None
-            else:
+            if tips_html != None:
                 for li in tips_html.findAll('li'):
                     if not li.find('div'):
                         return None
                     else:
                         self._tips.append(li.find('div').text)
+            else:
+                tips_html = tips_html_div.find('p')
+                if tips_html != None:
+                    self._tips.append(tips_html.text)
+                else:
+                    return None
 
     def _parse(self):
         try:
