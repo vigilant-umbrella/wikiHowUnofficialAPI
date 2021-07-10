@@ -4,7 +4,7 @@ wikiHowUnofficialAPI
 API to extract data from wikiHow.
 """
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 __author__ = 'Aniket Sharma, Ashok Arora'
 __credits__ = 'Aniket Sharma & Ashok Arora'
 
