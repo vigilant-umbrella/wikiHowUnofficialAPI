@@ -324,10 +324,7 @@ class Article:
         if not html.find('a'):
             raise ParseError
         else:
-            self._url = html.find('a').get('href')
-            if not self._url.startswith('http'):
-                self._url = 'http://' + self._url
-            self._title = self._url.split('/')[-1].replace('-', ' ')
+            self._title = html.text
 
     def _parse_intro(self, soup):
         """Method to extract the introduction from a wikiHow article.
@@ -466,9 +463,12 @@ class Article:
         if not update_html:
             raise ParseError
         else:
-            span = str(update_html.find('span'))
-            date = span[span.find(': ')+2:span.find('</span>')]
-            self._last_updated = datetime.strptime(date, '%B %d, %Y')
+            try:
+                span = str(update_html.find('span'))
+                date = span[span.find(': ')+2:span.find('</span>')]
+                self._last_updated = datetime.strptime(date, '%B %d, %Y')
+            except:
+                pass
 
     def _parse_views(self, soup):
         """Method to extract the number of views in a wikiHow article.
@@ -480,13 +480,13 @@ class Article:
             ParseError: The given article could not be parsed.
         """
         views_html = soup.find('div', {'class': 'sp_box sp_stats_box'})
-        if not views_html:
-            raise ParseError
-        else:
+        if views_html:
             div = views_html.findAll('div', {'class': 'sp_text'})
             span = str(div[2].find('span', {'class': 'sp_text_data'}))
-            self._views = int(''.join(
-                (span[span.find('>')+1: span.find('</span>')]).split(',')))
+            self._views = int(
+                ''.join((span[span.find('>')+1: span.find('</span>')]).split(',')))
+        else:
+            pass
 
     def _parse_co_authors(self, soup):
         """Method to extract the number of co-authors in a wikiHow article.
@@ -665,7 +665,7 @@ class WikiHow:
         'ar': 'http://ar.wikihow.com/',
         'ko': 'http://ko.wikihow.com/',
         'tr': 'http://www.wikihow.com.tr/',
-        'vn': 'http://www.wikihow.vn/',
+        'vn': 'http://www.wikihow.vn/'
     }
 
     @ staticmethod
@@ -687,7 +687,7 @@ class WikiHow:
         if lang not in WikiHow.lang2url:
             raise UnsupportedLanguage
         search_url = WikiHow.lang2url[lang] + \
-            'wikiHowTo?search=' + search_term.replace(' ', '+')
+            'wikiHowTo?search='+urllib.parse.quote(search_term)
         content = urllib.request.urlopen(search_url)
         read_content = content.read()
         soup = BeautifulSoup(read_content, 'html.parser').findAll('a', attrs={
